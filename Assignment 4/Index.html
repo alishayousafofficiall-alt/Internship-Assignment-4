@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Step Form with Progress</title>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; z-index:2;">
+    <h2>Multi-Step Form</h2>
+    <div class="autosave"><span class="dot"></span><span id="autosaveText">Not saved</span></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress"><i id="bar"></i></div>
+    <div class="step-numbers" id="stepNumbers"></div>
+  </div>
+
+  <form id="multiForm">
+    <!-- Step 1 -->
+    <fieldset data-step="1" class="active">
+      <h3>Account Info</h3>
+      <div class="grid">
+        <div>
+          <label for="first">First Name *</label>
+          <input id="first" name="first" type="text" required placeholder="Ali">
+          <div class="error" data-for="first"></div>
+        </div>
+        <div>
+          <label for="last">Last Name *</label>
+          <input id="last" name="last" type="text" required placeholder="Khan">
+          <div class="error" data-for="last"></div>
+        </div>
+        <div class="full">
+          <label for="email">Email *</label>
+          <input id="email" name="email" type="email" required placeholder="you@example.com">
+          <div class="error" data-for="email"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Step 2 -->
+    <fieldset data-step="2">
+      <h3>Contact Info</h3>
+      <div class="grid">
+        <div>
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel">
+        </div>
+        <div>
+          <label for="country">Country</label>
+          <select id="country" name="country">
+            <option value="">Choose...</option>
+            <option>Pakistan</option>
+            <option>USA</option>
+            <option>UK</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="full">
+          <label for="address">Address</label>
+          <textarea id="address" name="address" placeholder="Street, city, postal code"></textarea>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Step 3 -->
+    <fieldset data-step="3">
+      <h3>Preferences</h3>
+      <div class="grid">
+        <div>
+          <label for="plan">Plan *</label>
+          <select id="plan" name="plan" required>
+            <option value="">Select</option>
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+          <div class="error" data-for="plan"></div>
+        </div>
+        <div>
+          <label for="updates">Receive Updates?</label>
+          <select id="updates" name="updates">
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div class="full">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" placeholder="Anything else?"></textarea>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Step 4 Summary -->
+    <fieldset data-step="4">
+      <h3>Summary</h3>
+      <div class="summary" id="summaryBox"></div>
+    </fieldset>
+
+    <div class="actions">
+      <div>
+        <button type="button" class="btn ghost" id="prevBtn">Previous</button>
+        <button type="button" class="btn ghost" id="nextBtn">Next</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn ghost" id="clearBtn">Clear Saved</button>
+        <button type="submit" class="btn primary" id="submitBtn" style="display:none;">Submit</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+const STORAGE_KEY='multiStepForm_v1';
+const form=document.getElementById('multiForm');
+const fieldsets=Array.from(form.querySelectorAll('fieldset'));
+const totalSteps=fieldsets.length;
+const bar=document.getElementById('bar');
+const stepNumbersWrap=document.getElementById('stepNumbers');
+const autosaveText=document.getElementById('autosaveText');
+const nextBtn=document.getElementById('nextBtn');
+const prevBtn=document.getElementById('prevBtn');
+const submitBtn=document.getElementById('submitBtn');
+const summaryBox=document.getElementById('summaryBox');
+const clearBtn=document.getElementById('clearBtn');
+let current=1, saveTimer=null;
+
+// Build step bullets
+for(let i=1;i<=totalSteps;i++){
+  const b=document.createElement('div');
+  b.className='step-bullet'+(i===1?' active':'');
+  b.textContent=i;
+  b.dataset.step=i;
+  b.addEventListener('click',()=>goToStep(i));
+  stepNumbersWrap.appendChild(b);
+}
+updateUI();
+restore();
+
+// Navigation
+nextBtn.addEventListener('click',()=>{ if(validateStep(current)) goToStep(current+1); });
+prevBtn.addEventListener('click',()=>goToStep(current-1));
+
+function goToStep(n){
+  if(n<1)n=1;if(n>totalSteps)n=totalSteps;
+  if(n>current && !validateStep(current)) return;
+  current=n; updateUI();
+  if(current===totalSteps) buildSummary();
+}
+
+function validateStep(step){
+  const fs=fieldsets[step-1]; let ok=true;
+  Array.from(fs.querySelectorAll('[required]')).forEach(el=>{
+    const errEl=fs.querySelector('.error[data-for="'+el.name+'"]');
+    if(!el.value.trim()){ok=false;if(errEl) errEl.textContent='Required';}
+    else if(el.type==='email' && !/^\S+@\S+\.\S+$/.test(el.value)){ok=false;if(errEl) errEl.textContent='Invalid Email';}
+    else if(errEl) errEl.textContent='';
+  });
+  return ok;
+}
+
+function updateUI(){
+  fieldsets.forEach(f=>f.classList.remove('active'));
+  fieldsets[current-1].classList.add('active');
+  Array.from(stepNumbersWrap.children).forEach(b=>b.classList.toggle('active',Number(b.dataset.step)===current));
+  bar.style.width=Math.round(((current-1)/(totalSteps-1))*100)+'%';
+  prevBtn.style.display=current===1?'none':'inline-block';
+  nextBtn.style.display=current===totalSteps?'none':'inline-block';
+  submitBtn.style.display=current===totalSteps?'inline-block':'none';
+}
+
+// Build Summary
+function buildSummary(){
+  const data=new FormData(form); summaryBox.innerHTML='';
+  Array.from(data.entries()).forEach(([k,v])=>{
+    const row=document.createElement('div'); row.className='summary-row';
+    const label=document.createElement('div'); label.textContent=k.replace(/_/g,' ').replace(/\b\w/g,s=>s.toUpperCase());
+    const val=document.createElement('div'); val.textContent=v||'—';
+    row.appendChild(label); row.appendChild(val);
+    summaryBox.appendChild(row);
+  });
+}
+
+// Autosave
+form.addEventListener('input',()=>{
+  if(saveTimer) clearTimeout(saveTimer);
+  autosaveText.textContent='Saving...';
+  saveTimer=setTimeout(saveData,700);
+});
+function saveData(){
+  const data={}; new FormData(form).forEach((v,k)=>data[k]=v);
+  data.__meta={savedAt:new Date().toISOString(),step:current};
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+  autosaveText.textContent='Saved '+new Date().toLocaleTimeString();
+  autosaveText.classList.add('saved'); setTimeout(()=>autosaveText.classList.remove('saved'),1200);
+}
+function restore(){
+  const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+  try{
+    const data=JSON.parse(raw);
+    Object.keys(data).forEach(k=>{
+      if(k==='__meta') return;
+      const el=form.elements[k]; if(!el) return;
+      if(el.type==='radio'||el.type==='checkbox') el.checked=data[k]; else el.value=data[k];
+    });
+    if(data._meta && data.meta.step) current=data._meta.step;
+    autosaveText.textContent='Restored — '+(data._meta?new Date(data._meta.savedAt).toLocaleString():'');
+    updateUI();
+  }catch(e){console.warn(e);}
+}
+clearBtn.addEventListener('click',()=>{ if(confirm('Clear saved progress?')){ localStorage.removeItem(STORAGE_KEY); autosaveText.textContent='Not saved'; }});
+
+// Submit
+form.addEventListener('submit',e=>{
+  e.preventDefault(); if(!validateStep(current)) return;
+  const data={}; new FormData(form).forEach((v,k)=>data[k]=v);
+  console.log('Submit',data);
+  submitBtn.disabled=true; submitBtn.textContent='Sending...';
+  setTimeout(()=>{
+    submitBtn.disabled=false; submitBtn.textContent='Submit';
+    alert('Form Submitted Successfully!');
+    localStorage.removeItem(STORAGE_KEY); form.reset(); current=1; updateUI(); autosaveText.textContent='Not saved';
+  },900);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+:root{
+  --accent1:#ff3cac;
+  --accent2:#784ba0;
+  --accent3:#2b86c5;
+  --muted:#6b7280;
+  --bg:#eef2ff;
+  --success:#16a34a;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,sans-serif;}
+body{
+  background:linear-gradient(180deg,#eef2ff,#ffffff);
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+}
+
+.wrap {
+  position: relative;
+  width: 100%;
+  max-width: 650px;
+  padding: 40px 30px;
+  border-radius: 20px;
+  background: transparent;   /* bilkul transparent */
+  backdrop-filter: none;     /* blur hata diya */
+  z-index: 1;
+}
+
+.wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 2px; /* border thickness */
+  background: linear-gradient(
+    270deg,
+    var(--accent1),
+    var(--accent2),
+    var(--accent3),
+    var(--accent1)
+  );
+  background-size: 600% 600%;
+  animation: borderMove 6s linear infinite;
+
+  /* 🟢 Mask lagana hoga border ke liye */
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+
+
+/* Progress bar and steps */
+.progress-wrap{display:flex;align-items:center;gap:16px;margin-bottom:18px;position:relative; z-index:2;}
+.progress{flex:1;height:10px;background:#e6e9f2;border-radius:999px;overflow:hidden;}
+.progress>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent1),var(--accent2),var(--accent3));transition:width .45s ease;}
+.step-numbers{display:flex;gap:6px;z-index:2;}
+.step-bullet{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);color:var(--muted);cursor:pointer;transition:all .3s;}
+.step-bullet.active{background:linear-gradient(180deg,var(--accent1),var(--accent2),var(--accent3));color:#fff;box-shadow:0 0 12px rgba(255,60,172,0.6);transform:scale(1.1);}
+
+/* Form layout */
+form{position:relative; z-index:2;}
+fieldset{border:0;padding:0;margin:0;display:none;opacity:0;transform:translateY(10px);transition:opacity .4s, transform .4s;min-height:220px;} fieldset.active{display:block;opacity:1;transform:translateY(0);}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.full{grid-column:1/-1;}
+label{display:block;font-size:13px;margin-bottom:6px;color:#111;}
+input, select, textarea{
+  width:100%; padding:10px 5px; border:none; border-bottom:2px solid rgba(255,255,255,0.3);
+  background:transparent; outline:none; font-size:14px; transition: all .3s;
+}
+input:focus, select:focus, textarea:focus{
+  border-bottom:3px solid;
+  border-image: linear-gradient(90deg,#ff3cac,#784ba0,#2b86c5,#ff3cac) 1;
+  box-shadow:0 0 12px rgba(255,60,172,0.5);
+}
+textarea{min-height:100px;}
+.actions{display:flex;justify-content:space-between;margin-top:18px;}
+.btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600;transition:all .3s;}
+.btn.primary{background:linear-gradient(90deg,#ff3cac,#784ba0,#2b86c5);color:#fff;}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.3);}
+.btn.ghost:hover{border-color:var(--accent1);color:var(--accent1);}
+.error{color:#dc2626;font-size:13px;margin-top:8px;}
+.summary{background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; border:1px dashed rgba(255,255,255,0.3);}
+.summary-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.1);}
+.summary-row:last-child{border-bottom:0;}
+.autosave{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+.autosave .dot{width:10px;height:10px;border-radius:50%;background:#c7d2fe;box-shadow:0 0 6px rgba(255,60,172,0.2);}
+.saved{color:var(--success);font-weight:600;}
+@media(max-width:640px){.grid{grid-template-columns:1fr;} .step-bullet{width:30px;height:30px;font-size:13px;} .wrap{padding:20px;}}
